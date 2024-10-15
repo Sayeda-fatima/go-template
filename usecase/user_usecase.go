@@ -91,6 +91,9 @@ func (uu *userUsecase) Logout (user model.User) (error){
 
 	storedUser := model.User{}
 
+	if err := uu.ur.GetUserByEmail(&storedUser, user.Email); err!=nil{
+		return err
+	}
 	if err := uu.ur.UpdateUser(&storedUser, ""); err!=nil{
 		return err
 	}
