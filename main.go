@@ -1,22 +1,36 @@
 package main
 
 import (
-
+	"go-echo-template/controller"
 	"go-echo-template/database"
 	"go-echo-template/repository"
+	"go-echo-template/routes"
 	"go-echo-template/usecase"
 	"go-echo-template/validator"
-	"go-echo-template/routes"
-	"go-echo-template/controller"
+	"os"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
-func main(){
+func main() {
 
 	db := database.NewDB()
+	e := echo.New()
+
 	userValidator := validator.NewUserValidator()
 	userRepository := repository.NewUserRepository(db)
 	userUseCase := usecase.NewUserUsecase(userRepository, userValidator)
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"http://localhost:8080", os.Getenv("APP_URL")},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAccessControlAllowHeaders, echo.HeaderXCSRFToken},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowCredentials: true,
+	}))
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 	userController := controller.NewUserController(userUseCase)
-	e:= routes.NewRoute(userController)
+	routes.AuthRoutes(e, userController)
 	e.Logger.Fatal(e.Start(":8000"))
 }
