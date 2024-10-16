@@ -4,7 +4,7 @@ go mod init go-echo-template
 ```
 # Start App
 ```
-go run .
+go run . or air
 ```
 
 # ARCHITECTURE
