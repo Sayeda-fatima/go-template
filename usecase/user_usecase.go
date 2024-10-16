@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"go-echo-template/common"
 	"go-echo-template/model"
 	"go-echo-template/repository"
 	"go-echo-template/validator"
@@ -24,7 +25,7 @@ type (
 		uv validator.UserValidator
 	}
 	JwtCustomClaims struct {
-		id string `json:"name"`
+		id string `json:"id"`
 		jwt.RegisteredClaims
 	}
 )
@@ -60,16 +61,20 @@ func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, error) {
 func (uu *userUsecase) Login(user model.User) (string, error) {
 
 	if err := uu.uv.UserValidate(user); err != nil {
+		common.Logger.LogError().Msg(err.Error())
+
 		return "", err
 	}
 
 	storedUser := model.User{}
 	if err := uu.ur.GetUserByEmail(&storedUser, user.Email); err != nil {
+		common.Logger.LogError().Msg(err.Error())
 		return "", err
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(user.Password))
 	if err != nil {
+		common.Logger.LogError().Msg(err.Error())
 		return "", err
 	}
 
@@ -81,10 +86,12 @@ func (uu *userUsecase) Login(user model.User) (string, error) {
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
 
 	if err != nil {
+		common.Logger.LogError().Msg(err.Error())
 		return "", err
 	}
 	// store jwt token to db
 	if err := uu.ur.UpdateUser(&storedUser, tokenString); err != nil {
+		common.Logger.LogError().Msg(err.Error())
 		return "", err
 	}
 	return tokenString, nil
@@ -95,9 +102,11 @@ func (uu *userUsecase) Logout(user model.User) error {
 	storedUser := model.User{}
 
 	if err := uu.ur.GetUserByEmail(&storedUser, user.Email); err != nil {
+		common.Logger.LogError().Msg(err.Error())
 		return err
 	}
 	if err := uu.ur.UpdateUser(&storedUser, ""); err != nil {
+		common.Logger.LogError().Msg(err.Error())
 		return err
 	}
 

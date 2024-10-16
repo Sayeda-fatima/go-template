@@ -1,8 +1,10 @@
 package main
 
 import (
+	"go-echo-template/common"
 	"go-echo-template/controller"
 	"go-echo-template/database"
+	"go-echo-template/middlewares"
 	"go-echo-template/repository"
 	"go-echo-template/routes"
 	"go-echo-template/usecase"
@@ -28,9 +30,11 @@ func main() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowCredentials: true,
 	}))
+	common.Newlogger()
+	e.Use(middlewares.LoggingMiddleWare)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	userController := controller.NewUserController(userUseCase)
 	routes.AuthRoutes(e, userController)
-	e.Logger.Fatal(e.Start(":8000"))
+	common.Logger.LogInfo().Msg(e.Start(":8000").Error())
 }
