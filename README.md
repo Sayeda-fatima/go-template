@@ -6,6 +6,11 @@ go mod init go-echo-template
 ```
 go run .
 ```
+or
+```
+air
+```
+
 
 # ARCHITECTURE
 ![alt text](image.png)
