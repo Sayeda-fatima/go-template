@@ -67,7 +67,7 @@ func main() {
 			})
 		},
 	}))
-	userController := controller.NewUserController(userUseCase)
+	userController := controller.NewUserController(userUseCase, common.NewRateLimiter())
 	routes.AuthRoutes(e, userController)
 	common.Logger.LogInfo().Msg(e.Start(":8000").Error())
 }
