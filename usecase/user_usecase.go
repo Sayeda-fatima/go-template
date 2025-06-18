@@ -1,10 +1,12 @@
 package usecase
 
 import (
+	"net/http"
 	"os"
 	"time"
 
 	"go-echo-template/common"
+	"go-echo-template/constants"
 	"go-echo-template/model"
 	"go-echo-template/repository"
 	"go-echo-template/validator"
@@ -15,9 +17,9 @@ import (
 
 type (
 	UserUsecase interface {
-		SignUp(user model.User) (model.UserResponse, error)
-		Login(user model.User) (string, error)
-		Logout(user model.User) error
+		SignUp(user model.User) (model.UserResponse, common.HttpError)
+		Login(user model.User) (string, common.HttpError)
+		Logout(user model.User) common.HttpError
 	}
 
 	userUsecase struct {
@@ -34,19 +36,22 @@ func NewUserUsecase(ur repository.UserRepository, uv validator.UserValidator) Us
 	return &userUsecase{ur, uv}
 }
 
-func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, error) {
+func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, common.HttpError) {
 
 	if err := uu.uv.UserValidate(user); err != nil {
-		return model.UserResponse{}, err
+		return model.UserResponse{}, common.NewHTTPError(http.StatusUnprocessableEntity, constants.MsgUnprocessableEntity, err.Error())
+
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 	if err != nil {
-		return model.UserResponse{}, err
+		return model.UserResponse{}, common.NewHTTPError(http.StatusInternalServerError, constants.MsgInternalServerError, err.Error())
+
 	}
 
 	newUser := model.User{Email: user.Email, Name: user.Name, Password: string(hash)}
 	if err := uu.ur.CreateUser(&newUser); err != nil {
-		return model.UserResponse{}, err
+		return model.UserResponse{}, common.NewHTTPError(http.StatusInternalServerError, constants.MsgInternalServerError, err.Error())
+
 	}
 
 	resUser := model.UserResponse{
@@ -58,24 +63,27 @@ func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, error) {
 	return resUser, nil
 }
 
-func (uu *userUsecase) Login(user model.User) (string, error) {
+func (uu *userUsecase) Login(user model.User) (string, common.HttpError) {
 
 	if err := uu.uv.UserValidate(user); err != nil {
 		common.Logger.LogError().Msg(err.Error())
 
-		return "", err
+		return "", common.NewHTTPError(http.StatusUnprocessableEntity, constants.MsgUnprocessableEntity, err.Error())
+
 	}
 
 	storedUser := model.User{}
 	if err := uu.ur.GetUserByEmail(&storedUser, user.Email); err != nil {
 		common.Logger.LogError().Msg(err.Error())
-		return "", err
+		return "", common.NewHTTPError(http.StatusBadRequest, constants.MsgInvalidCredentials, err.Error())
+
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(user.Password))
 	if err != nil {
 		common.Logger.LogError().Msg(err.Error())
-		return "", err
+		return "", common.NewHTTPError(http.StatusInternalServerError, constants.MsgInternalServerError, err.Error())
+
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -87,27 +95,29 @@ func (uu *userUsecase) Login(user model.User) (string, error) {
 
 	if err != nil {
 		common.Logger.LogError().Msg(err.Error())
-		return "", err
+		return "", common.NewHTTPError(http.StatusInternalServerError, constants.MsgInternalServerError, err.Error())
+
 	}
 	// store jwt token to db
 	if err := uu.ur.UpdateUser(&storedUser, tokenString); err != nil {
 		common.Logger.LogError().Msg(err.Error())
-		return "", err
+		return "", common.NewHTTPError(http.StatusInternalServerError, constants.MsgInternalServerError, err.Error())
+
 	}
 	return tokenString, nil
 }
 
-func (uu *userUsecase) Logout(user model.User) error {
+func (uu *userUsecase) Logout(user model.User) common.HttpError {
 
 	storedUser := model.User{}
 
 	if err := uu.ur.GetUserByEmail(&storedUser, user.Email); err != nil {
 		common.Logger.LogError().Msg(err.Error())
-		return err
+		return common.NewHTTPError(http.StatusBadRequest, constants.MsgInvalidEmail, err.Error())
 	}
 	if err := uu.ur.UpdateUser(&storedUser, ""); err != nil {
 		common.Logger.LogError().Msg(err.Error())
-		return err
+		return common.NewHTTPError(http.StatusInternalServerError, constants.MsgInternalServerError, err.Error())
 	}
 
 	return nil
