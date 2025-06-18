@@ -30,7 +30,7 @@ func main() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowCredentials: true,
 	}))
-	common.Newlogger()
+	common.NewLogger(os.Getenv("ENV"))
 	e.Use(middlewares.LoggingMiddleWare)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
