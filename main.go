@@ -34,7 +34,7 @@ func main() {
 	db := database.NewDB()
 	e := echo.New()
 
-	userValidator := validator.NewUserValidator()
+	userValidator := validator.NewValidator()
 	userRepository := repository.NewUserRepository(db)
 	userUseCase := usecase.NewUserUsecase(userRepository, userValidator)
 

@@ -24,7 +24,7 @@ type (
 
 	userUsecase struct {
 		ur repository.UserRepository
-		uv validator.UserValidator
+		uv validator.Validator
 	}
 	JwtCustomClaims struct {
 		id string `json:"id"`
@@ -32,13 +32,13 @@ type (
 	}
 )
 
-func NewUserUsecase(ur repository.UserRepository, uv validator.UserValidator) UserUsecase {
+func NewUserUsecase(ur repository.UserRepository, uv validator.Validator) UserUsecase {
 	return &userUsecase{ur, uv}
 }
 
 func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, common.HttpError) {
 
-	if err := uu.uv.UserValidate(user); err != nil {
+	if err := uu.uv.Validate(user); err != nil {
 		return model.UserResponse{}, common.NewHTTPError(http.StatusUnprocessableEntity, constants.MsgUnprocessableEntity, err.Error())
 
 	}
@@ -65,7 +65,7 @@ func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, common.HttpE
 
 func (uu *userUsecase) Login(user model.User) (string, common.HttpError) {
 
-	if err := uu.uv.UserValidate(user); err != nil {
+	if err := uu.uv.Validate(user); err != nil {
 		common.Logger.LogError().Msg(err.Error())
 
 		return "", common.NewHTTPError(http.StatusUnprocessableEntity, constants.MsgUnprocessableEntity, err.Error())
