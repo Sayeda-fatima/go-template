@@ -2,6 +2,7 @@ package controller
 
 import (
 	"go-echo-template/common"
+	"go-echo-template/dto"
 	"go-echo-template/model"
 	"go-echo-template/usecase"
 	"net/http"
@@ -29,7 +30,10 @@ func NewUserController(uu usecase.UserUsecase, rateLimiter *common.RateLimiter) 
 func (uc *userController) SignUp(c echo.Context) error {
 	user := model.User{}
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid payload data",
+			Err:     err.Error(),
+		})
 	}
 
 	userRes, err := uc.uu.SignUp(user)
@@ -38,14 +42,20 @@ func (uc *userController) SignUp(c echo.Context) error {
 		return c.JSON(err.ErrorStatusCode(), err)
 	}
 
-	return c.JSON(http.StatusCreated, userRes)
+	return c.JSON(http.StatusCreated, dto.SuccessResponse[model.UserResponse]{
+		Message: "Sign up successfull",
+		Data:    userRes,
+	})
 }
 
 func (uc *userController) Login(c echo.Context) error {
 	user := model.User{}
 
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid payload data",
+			Err:     err.Error(),
+		})
 	}
 
 	if !uc.rateLimiter.Allow(user.Email, 1*time.Second) {
@@ -61,8 +71,9 @@ func (uc *userController) Login(c echo.Context) error {
 		return c.JSON(err.ErrorStatusCode(), err)
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"token": tokenString,
+	return c.JSON(http.StatusOK, dto.SuccessResponse[string]{
+		Message: "Login successfull",
+		Data:    tokenString,
 	})
 }
 
@@ -71,7 +82,10 @@ func (uc *userController) Logout(c echo.Context) error {
 	user := model.User{}
 
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Message: "Invalid payload data",
+			Err:     err.Error(),
+		})
 	}
 
 	if err := uc.uu.Logout(user); err != nil {
