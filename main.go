@@ -9,10 +9,12 @@ import (
 	"go-echo-template/routes"
 	"go-echo-template/usecase"
 	"go-echo-template/validator"
+	"net/http"
 	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 )
 
 func main() {
@@ -31,9 +33,28 @@ func main() {
 		AllowCredentials: true,
 	}))
 	common.NewLogger(os.Getenv("ENV"))
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"*", "http://localhost:8080", os.Getenv("APP_URL")},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAccessControlAllowHeaders, echo.HeaderXCSRFToken, "Authorization"},
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowCredentials: false,
+	}))
+
 	e.Use(middlewares.LoggingMiddleWare)
 	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+		StackSize:         4 * 1024,
+		LogLevel:          log.ERROR,
+		DisableStackAll:   false,
+		DisablePrintStack: false,
+		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"message": "Internal Server Error",
+				"error":   err.Error(),
+				"stack":   string(stack),
+			})
+		},
+	}))
 	userController := controller.NewUserController(userUseCase)
 	routes.AuthRoutes(e, userController)
 	common.Logger.LogInfo().Msg(e.Start(":8000").Error())
