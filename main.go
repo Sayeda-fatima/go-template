@@ -12,12 +12,24 @@ import (
 	"net/http"
 	"os"
 
+	"go-echo-template/config"
+
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 )
 
 func main() {
+
+	envErr := godotenv.Load(".env")
+	if envErr != nil {
+		common.Logger.LogError().Msg("Error loading .env file")
+		return
+	}
+	if err := config.Load(); err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
 
 	db := database.NewDB()
 	e := echo.New()
