@@ -11,6 +11,7 @@ import (
 	"go-echo-template/validator"
 	"net/http"
 	"os"
+	"time"
 
 	"go-echo-template/config"
 
@@ -67,7 +68,8 @@ func main() {
 			})
 		},
 	}))
-	userController := controller.NewUserController(userUseCase, common.NewRateLimiter())
+	userController := controller.NewUserController(userUseCase, common.NewFrequencyLimiter(5, 30*time.Second, 1*time.Minute))
+
 	routes.AuthRoutes(e, userController)
 	common.Logger.LogInfo().Msg(e.Start(":8000").Error())
 }

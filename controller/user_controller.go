@@ -6,7 +6,6 @@ import (
 	"go-echo-template/model"
 	"go-echo-template/usecase"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -19,12 +18,12 @@ type UserController interface {
 }
 
 type userController struct {
-	uu          usecase.UserUsecase
-	rateLimiter *common.RateLimiter
+	uu                   usecase.UserUsecase
+	frequencyRateLimiter *common.FrequencyLimiter
 }
 
-func NewUserController(uu usecase.UserUsecase, rateLimiter *common.RateLimiter) UserController {
-	return &userController{uu, rateLimiter}
+func NewUserController(uu usecase.UserUsecase, frequencyRateLimiter *common.FrequencyLimiter) UserController {
+	return &userController{uu, frequencyRateLimiter}
 }
 
 func (uc *userController) SignUp(c echo.Context) error {
@@ -58,7 +57,7 @@ func (uc *userController) Login(c echo.Context) error {
 		})
 	}
 
-	if !uc.rateLimiter.Allow(user.Email, 1*time.Second) {
+	if !uc.frequencyRateLimiter.Allow(user.Email) {
 		return c.JSON(http.StatusTooManyRequests, map[string]interface{}{
 			"message": "You can attempt to login only once every second using this email and password.",
 		})
