@@ -1,0 +1,12 @@
+{
+    "port": "8080",
+    "db": {
+      "username": "",
+      "password": "",
+      "host": "",
+      "port": "3306",
+      "database": ""
+    },
+    "log_level": "debug"
+  }
+  

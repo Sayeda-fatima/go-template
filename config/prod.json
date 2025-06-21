@@ -1,0 +1,12 @@
+{
+    "port": "8080",
+    "db": {
+      "username": "root",
+      "password": "",
+      "host": "localhost",
+      "port": "3306",
+      "database": "oil-salvage-stage"
+    },
+    "log_level": "debug"
+  }
+  
