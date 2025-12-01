@@ -35,6 +35,10 @@ func main() {
 	db := database.NewDB()
 	e := echo.New()
 
+	// Initialize email
+	common.NewEmailService()
+	common.NewFileUploader()
+
 	userValidator := validator.NewValidator()
 	userRepository := repository.NewUserRepository(db)
 	userUseCase := usecase.NewUserUsecase(userRepository, userValidator)
